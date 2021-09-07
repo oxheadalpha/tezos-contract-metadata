@@ -1,6 +1,7 @@
 # Tezos Contract Metadata
 
-> TZIP-{016,012,021} Contract Metadata in OCaml
+> TZIP-{016,012,021} Contract Metadata in OCaml, see
+> [gitlab.com/tezos/tzip#current-tzips](https://gitlab.com/tezos/tzip#current-tzips).
 
 ## Build
 
@@ -8,15 +9,22 @@ Get dependencies:
 
 ```
 opam switch create . 4.12.0
+eval $(opam env)
 opam install --deps-only src/lib/tezos-contract-metadata.opam
-opam install ocamlformat.0.19.0 merlin
+opam install ocamlformat.0.19.0 merlin # For development.
 ```
 
 Then
 
 ```
-eval $(opam env)
 dune build @check
+```
+
+
+Linting:
+
+```
+dune build @fmt --auto-promote
 ```
 
 
