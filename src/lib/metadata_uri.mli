@@ -22,6 +22,7 @@
 (* DEALINGS IN THE SOFTWARE.                                                 *)
 (*                                                                           *)
 (*****************************************************************************)
+open Tezos_error_monad
 
 (** Implementation of the TZIP-16 metadata URIs. *)
 

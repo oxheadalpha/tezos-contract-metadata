@@ -22,6 +22,7 @@
 (* DEALINGS IN THE SOFTWARE.                                                 *)
 (*                                                                           *)
 (*****************************************************************************)
+open Tezos_error_monad
 
 type hash_kind = [`Sha256]
 

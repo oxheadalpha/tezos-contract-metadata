@@ -22,6 +22,7 @@
 (* DEALINGS IN THE SOFTWARE.                                                 *)
 (*                                                                           *)
 (*****************************************************************************)
+open Tezos_error_monad
 
 module License = struct
   type t = {name: string; details: string option}
