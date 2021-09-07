@@ -1,0 +1,19 @@
+opam-version: "2.0"
+maintainer: "seb@mondet.org"
+authors: [ "Tezos devteam" ]
+homepage: "https://github.com/oxheadalpha/tezos-contract-metadata/"
+bug-reports: "https://github.com/oxheadalpha/tezos-contract-metadata/issues"
+dev-repo: "git+https://github.com/oxheadalpha/tezos-contract-metadata.git"
+license: "MIT"
+depends: [
+  "tezos-tooling" { with-test }
+  "dune" { >= "1.11" }
+  "tezos-micheline"
+  "cohttp"
+  "fmt"
+]
+build: [
+  ["dune" "build" "-p" name "-j" jobs]
+  ["dune" "runtest" "-p" name "-j" jobs] {with-test}
+]
+synopsis: "Implementation of TZIP-16: core types and converters"

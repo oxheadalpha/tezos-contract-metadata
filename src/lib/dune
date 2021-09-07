@@ -1,0 +1,6 @@
+(library
+ (name tezos_contract_metadata)
+ (public_name tezos-contract-metadata)
+ (libraries tezos-micheline cohttp fmt base)
+ (flags
+  (:standard -open Tezos_error_monad)))
