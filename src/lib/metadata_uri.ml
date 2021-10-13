@@ -34,6 +34,8 @@ type t =
 
 module Parsing_error = struct
   type error_kind =
+    | Bad_b58 of string * string
+    | Wrong_network of string * string
     | Wrong_scheme of string option
     | Missing_cid_for_ipfs
     | Wrong_tezos_storage_host of string
@@ -47,6 +49,9 @@ module Parsing_error = struct
   let pp ppf {input; error_kind} =
     let open Fmt in
     let err_fmt = function
+      | Bad_b58 (s, failure) -> kstr (const text) "Bad b58 %s %s" s failure
+      | Wrong_network (s, failure) ->
+          kstr (const text) "Bad network %s %s" s failure
       | Wrong_scheme None -> const text "Missing URI scheme"
       | Wrong_scheme (Some s) -> kstr (const text) "Unknown URI scheme: %S" s
       | Missing_cid_for_ipfs -> const text "Missing CID in ipfs:// URI"
@@ -61,7 +66,7 @@ module Parsing_error = struct
             message in
     pf ppf "%a"
       (box
-         ( const text "Error while parsing"
+         ( const text "Error while parsing "
          ++ const (quote string) input
          ++ const string ":" ++ sp ++ err_fmt error_kind ) )
       ()
@@ -132,7 +137,7 @@ type field_validation =
        Tezos_error_monad.Error_monad.TzTrace.trace )
      result
 
-let rec of_uri ?validate_network ?validate_kt1_address uri =
+let rec of_uri uri =
   let open Uri in
   let open Parsing_error in
   let fail error_kind =
@@ -159,13 +164,24 @@ let rec of_uri ?validate_network ?validate_kt1_address uri =
         | [one; two] -> ok (Some two, Some one)
         | _ -> fail (Wrong_tezos_storage_host s) ) )
       >>? fun (network, address) ->
-      let validate_option f v =
-        match (f, v) with
-        | Some (validate : field_validation), Some value -> validate value
-        | _, _ -> ok () in
-      validate_option validate_network network
+      let validate_option ~f v =
+        match v with Some value -> f value | None -> ok () in
+      validate_option network ~f:(function
+        | "mainnet" | "carthagenet" | "delphinet" | "dalphanet" | "zeronet" ->
+            Ok ()
+        | network -> (
+          try Ok (ignore (B58_hashes.check_b58_chain_id_hash network)) with
+          | Failure f -> fail (Wrong_network (network, f))
+          | e ->
+              Fmt.kstr
+                (fun x -> fail (Wrong_network (network, x)))
+                "%a" Base.Exn.pp e ) )
       >>? fun () ->
-      validate_option validate_kt1_address address
+      validate_option address ~f:(fun address ->
+          try Ok (ignore (B58_hashes.check_b58_kt1_hash address)) with
+          | Failure f -> fail (Bad_b58 (address, f))
+          | e ->
+              Fmt.kstr (fun x -> fail (Bad_b58 (address, x))) "%a" Base.Exn.pp e )
       >>? fun () ->
       match remove_first_slash (path uri) with
       | k when String.contains k '/' ->
@@ -194,6 +210,34 @@ let rec of_uri ?validate_network ?validate_kt1_address uri =
                 | other -> Printexc.to_string other ) )
         | None -> Fmt.kstr fail_m "Host does not start with 0x" ) )
   | Some s -> fail (Wrong_scheme (Some s))
+
+let%test "of_uri bogus-schema" =
+  Result.is_error (of_uri (Uri.of_string "bogus-schema://nope"))
+
+let%test "validate_address tezos-storage bogus address" =
+  Result.is_error (of_uri (Uri.of_string "tezos-storage://nope"))
+
+let%test "validate_address tezos-storage bogus network" =
+  Result.is_error
+    (of_uri
+       (Uri.of_string
+          "tezos-storage://KT1QDFEu8JijYbsJqzoXq7mKvfaQQamHD1kX.harappanet" ) )
+
+let%test "validate_address tezos-storage with path and network" =
+  Result.is_ok
+    (of_uri
+       (Uri.of_string
+          "tezos-storage://KT1QDFEu8JijYbsJqzoXq7mKvfaQQamHD1kX.mainnet/foo" ) )
+
+let%test "validate_address tezos-storage with path" =
+  Result.is_ok
+    (of_uri
+       (Uri.of_string "tezos-storage://KT1QDFEu8JijYbsJqzoXq7mKvfaQQamHD1kX/foo") )
+
+let%test "of_uri tezos-storage no path" =
+  Result.is_ok
+    (of_uri
+       (Uri.of_string "tezos-storage://KT1QDFEu8JijYbsJqzoXq7mKvfaQQamHD1kX") )
 
 let rec to_string_uri = function
   | Web s -> s

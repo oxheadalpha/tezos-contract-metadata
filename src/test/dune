@@ -1,0 +1,6 @@
+(library
+ (name tezos_contract_metadata_test)
+ (inline_tests)
+ (preprocess
+  (pps ppx_inline_test ppx_expect))
+ (libraries tezos-contract-metadata lwt.unix))

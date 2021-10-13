@@ -1,7 +1,7 @@
 (*****************************************************************************)
 (*                                                                           *)
 (* Open Source License                                                       *)
-(* Copyright (c) 2020 TQ Tezos <contact@tqtezos.com>                         *)
+(* Copyright (c) 2021 TQ Tezos <contact@tqtezos.com>                         *)
 (*                                                                           *)
 (* Permission is hereby granted, free of charge, to any person obtaining a   *)
 (* copy of this software and associated documentation files (the "Software"),*)
@@ -22,59 +22,46 @@
 (* DEALINGS IN THE SOFTWARE.                                                 *)
 (*                                                                           *)
 (*****************************************************************************)
-open Tezos_error_monad
+open! Base
+open Tezos_contract_metadata
 
-(** Implementation of the TZIP-16 metadata URIs. *)
+exception Error of string
 
-type hash_kind = [`Sha256]
+let%expect_test "Fetch url test" =
+  let nodes = Query_nodes.Node_list.nodes (Query_nodes.get_default_nodes ()) in
+  let ctxt =
+    object (self)
+      method formatter = Caml.Format.str_formatter
+      method log_context = ""
 
-(** The type for {i parsed} metadata URIs. *)
-type t =
-  | Web of string  (** A web-URI is an ["http://"] or ["https://"] URL. *)
-  | Ipfs of {cid: string; path: string}  (** An IPFS URI. *)
-  | Storage of {network: string option; address: string option; key: string}
-      (** A URI pointing inside a contract's storage. *)
-  | Hash of {kind: hash_kind; value: string; target: t}
-      (** A ["sha256://0xdeadbeef/<target-uri>"] checked URI. *)
+      method http_client : Http_client.t =
+        { get=
+            (fun ?limit_bytes uri ->
+              Lwt.return
+                (Ok
+                   ( "get uri: " ^ uri ^ " limit "
+                   ^ Int.to_string (Option.value limit_bytes ~default:(-1)) ) )
+              )
+        ; post=
+            (fun ~headers ~body uri ->
+              let _ = headers in
+              Lwt.return (Ok ("post uri: " ^ uri ^ " body " ^ body)) )
+        }
 
-module Parsing_error : sig
-  type error_kind =
-    | Bad_b58 of string * string
-    | Wrong_network of string * string
-    | Wrong_scheme of string option
-    | Missing_cid_for_ipfs
-    | Wrong_tezos_storage_host of string
-    | Forbidden_slash_in_tezos_storage_path of string
-    | Missing_host_for_hash_uri of hash_kind
-    | Wrong_hex_format_for_hash of
-        {hash: hash_kind; host: string; message: string}
-
-  type t = {input: string; error_kind: error_kind}
-
-  val pp : Format.formatter -> t -> unit
-  val encoding : t Data_encoding.encoding
-end
-
-type Error_monad.error += Contract_metadata_uri_parsing of Parsing_error.t
-
-type field_validation =
-     string
-  -> ( unit
-     , Tezos_error_monad.Error_monad.error
-       Tezos_error_monad.Error_monad.TzTrace.trace )
-     result
-
-val of_uri :
-     Uri.t
-  -> ( t
-     , Tezos_error_monad.Error_monad.error
-       Tezos_error_monad.Error_monad.TzTrace.trace )
-     result
-(** Parse a metadata URI, validation of the network and address fields is left
-    optional. *)
-
-val to_string_uri : t -> string
-(** Make a parsable URI. *)
-
-val pp : Format.formatter -> t -> unit
-(** Pretty-print a URI. *)
+      method nodes = nodes
+      method program_time = 0.0
+      method with_log_context _prefix = self (* don't care *)
+    end in
+  let uri_res = Metadata_uri.of_uri (Uri.of_string "https://example.com") in
+  let uri =
+    match uri_res with Ok u -> u | _ -> raise (Error "failed to parse uril")
+  in
+  let open Lwt.Infix in
+  let test =
+    Contract_metadata.Uri.fetch ctxt uri ~current_contract:None
+    >>= fun fetch_result ->
+    match fetch_result with
+    | Ok s -> Stdio.print_endline s ; Lwt.return ()
+    | _ -> Stdio.print_endline "fail" ; Lwt.return () in
+  Lwt_main.run test ; [%expect {|
+    get uri: https://example.com limit -1 |}]

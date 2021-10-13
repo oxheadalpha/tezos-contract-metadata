@@ -27,6 +27,16 @@ Linting:
 dune build @fmt --auto-promote
 ```
 
+## Test
+
+```
+dune test
+```
+
+Note that some tests are in src/test to allow a lwt.unix dependency.  Since
+some users of ths lib might want to use js_of_ocaml.lwt, we don't want to depend
+on some any lwt in src/lib.
+
 
 ## History
 

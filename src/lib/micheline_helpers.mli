@@ -32,7 +32,7 @@ val get_storage_type_exn :
      Tezos_micheline.Micheline.node
 (** Find the ["storage"] section of a Micheline-encoded Michelson contract.
 
-    @raises [Failure _\] if not found. *)
+    @raise [Failure _\] if not found. *)
 
 val get_parameter_type_exn :
      string Tezos_micheline.Micheline.canonical
@@ -41,7 +41,7 @@ val get_parameter_type_exn :
      Tezos_micheline.Micheline.node
 (** Find the ["parameter"] section of a Micheline-encoded Michelson contract.
 
-    @raises [Failure _\] if not found. *)
+    @raise [Failure _\] if not found. *)
 
 val pp_arbitrary_micheline :
   Format.formatter -> ('a, string) Tezos_micheline.Micheline.node -> unit

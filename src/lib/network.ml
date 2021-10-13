@@ -22,59 +22,21 @@
 (* DEALINGS IN THE SOFTWARE.                                                 *)
 (*                                                                           *)
 (*****************************************************************************)
-open Tezos_error_monad
 
-(** Implementation of the TZIP-16 metadata URIs. *)
+type t = [`Mainnet | `Edonet | `Florencenet | `Granadanet | `Sandbox]
 
-type hash_kind = [`Sha256]
+let to_string : t -> string = function
+  | `Mainnet -> "Mainnet"
+  | `Granadanet -> "Granadanet"
+  | `Edonet -> "Edonet"
+  | `Florencenet -> "Florencenet"
+  | `Sandbox -> "Sandbox"
 
-(** The type for {i parsed} metadata URIs. *)
-type t =
-  | Web of string  (** A web-URI is an ["http://"] or ["https://"] URL. *)
-  | Ipfs of {cid: string; path: string}  (** An IPFS URI. *)
-  | Storage of {network: string option; address: string option; key: string}
-      (** A URI pointing inside a contract's storage. *)
-  | Hash of {kind: hash_kind; value: string; target: t}
-      (** A ["sha256://0xdeadbeef/<target-uri>"] checked URI. *)
+let better_call_dev_path : t -> string option = function
+  | `Mainnet -> Some "mainnet"
+  | `Granadanet -> Some "granadanet"
+  | `Edonet -> Some "edo2net"
+  | `Florencenet -> Some "florencenet"
+  | `Sandbox -> None
 
-module Parsing_error : sig
-  type error_kind =
-    | Bad_b58 of string * string
-    | Wrong_network of string * string
-    | Wrong_scheme of string option
-    | Missing_cid_for_ipfs
-    | Wrong_tezos_storage_host of string
-    | Forbidden_slash_in_tezos_storage_path of string
-    | Missing_host_for_hash_uri of hash_kind
-    | Wrong_hex_format_for_hash of
-        {hash: hash_kind; host: string; message: string}
-
-  type t = {input: string; error_kind: error_kind}
-
-  val pp : Format.formatter -> t -> unit
-  val encoding : t Data_encoding.encoding
-end
-
-type Error_monad.error += Contract_metadata_uri_parsing of Parsing_error.t
-
-type field_validation =
-     string
-  -> ( unit
-     , Tezos_error_monad.Error_monad.error
-       Tezos_error_monad.Error_monad.TzTrace.trace )
-     result
-
-val of_uri :
-     Uri.t
-  -> ( t
-     , Tezos_error_monad.Error_monad.error
-       Tezos_error_monad.Error_monad.TzTrace.trace )
-     result
-(** Parse a metadata URI, validation of the network and address fields is left
-    optional. *)
-
-val to_string_uri : t -> string
-(** Make a parsable URI. *)
-
-val pp : Format.formatter -> t -> unit
-(** Pretty-print a URI. *)
+let all : t list = [`Mainnet; `Granadanet; `Edonet; `Florencenet; `Sandbox]

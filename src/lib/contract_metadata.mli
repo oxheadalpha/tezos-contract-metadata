@@ -1,7 +1,7 @@
 (*****************************************************************************)
 (*                                                                           *)
 (* Open Source License                                                       *)
-(* Copyright (c) 2020 TQ Tezos <contact@tqtezos.com>                         *)
+(* Copyright (c) 2021 TQ Tezos <contact@tqtezos.com>                         *)
 (*                                                                           *)
 (* Permission is hereby granted, free of charge, to any person obtaining a   *)
 (* copy of this software and associated documentation files (the "Software"),*)
@@ -22,59 +22,32 @@
 (* DEALINGS IN THE SOFTWARE.                                                 *)
 (*                                                                           *)
 (*****************************************************************************)
-open Tezos_error_monad
+open! Base
+open! Import
 
-(** Implementation of the TZIP-16 metadata URIs. *)
+module Uri : sig
+  module Fetcher : sig
+    type gateway = {main: string; alternate: string}
+    type t = {gateway: gateway}
 
-type hash_kind = [`Sha256]
+    val create : unit -> t
+  end
 
-(** The type for {i parsed} metadata URIs. *)
-type t =
-  | Web of string  (** A web-URI is an ["http://"] or ["https://"] URL. *)
-  | Ipfs of {cid: string; path: string}  (** An IPFS URI. *)
-  | Storage of {network: string option; address: string option; key: string}
-      (** A URI pointing inside a contract's storage. *)
-  | Hash of {kind: hash_kind; value: string; target: t}
-      (** A ["sha256://0xdeadbeef/<target-uri>"] checked URI. *)
+  val fetch :
+       ?limit_bytes:int
+    -> ?prefix:string
+    -> < nodes: Query_nodes.Node.t list ; .. > Context.t
+    -> Metadata_uri.t
+    -> current_contract:string option
+    -> Http_client.result Lwt.t
 
-module Parsing_error : sig
-  type error_kind =
-    | Bad_b58 of string * string
-    | Wrong_network of string * string
-    | Wrong_scheme of string option
-    | Missing_cid_for_ipfs
-    | Wrong_tezos_storage_host of string
-    | Forbidden_slash_in_tezos_storage_path of string
-    | Missing_host_for_hash_uri of hash_kind
-    | Wrong_hex_format_for_hash of
-        {hash: hash_kind; host: string; message: string}
-
-  type t = {input: string; error_kind: error_kind}
-
-  val pp : Format.formatter -> t -> unit
-  val encoding : t Data_encoding.encoding
+  val needs_context_address : Metadata_uri.t -> bool
 end
 
-type Error_monad.error += Contract_metadata_uri_parsing of Parsing_error.t
-
-type field_validation =
-     string
-  -> ( unit
-     , Tezos_error_monad.Error_monad.error
-       Tezos_error_monad.Error_monad.TzTrace.trace )
-     result
-
-val of_uri :
-     Uri.t
-  -> ( t
-     , Tezos_error_monad.Error_monad.error
-       Tezos_error_monad.Error_monad.TzTrace.trace )
-     result
-(** Parse a metadata URI, validation of the network and address fields is left
-    optional. *)
-
-val to_string_uri : t -> string
-(** Make a parsable URI. *)
-
-val pp : Format.formatter -> t -> unit
-(** Pretty-print a URI. *)
+module Content : sig
+  val of_json :
+       string
+    -> ( [`Fixed_legacy of string * string] list * Metadata_contents.t
+       , Tezos_error_monad.Error_monad.tztrace )
+       Result.t
+end

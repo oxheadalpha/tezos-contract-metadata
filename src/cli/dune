@@ -1,0 +1,3 @@
+(executable
+ (name main)
+ (libraries tezos-contract-metadata cmdliner cohttp-lwt-unix lwt))
