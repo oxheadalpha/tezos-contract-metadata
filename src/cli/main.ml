@@ -196,13 +196,10 @@ let show_metadata src format debug =
 (* CLI *)
 let metadata_format =
   let doc = "metadata format" in
-  let format =
-    Arg.enum
-      [ ("text", Text Full)
-      ; ("text:full", Text Full)
-      ; ("text:short", Text Short)
-      ; ("raw", Raw)
-      ; ("json", Json) ] in
+  let formats =
+    List.map [Text Full; Text Short; Raw; Json] ~f:(fun v ->
+        (string_of_output_format v, v) ) in
+  let format = Arg.enum formats in
   Arg.(value & opt format (Text Full) & info ["format"] ~docv:"FORMAT" ~doc)
 
 let debug =
