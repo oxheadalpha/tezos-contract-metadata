@@ -191,7 +191,7 @@ let show_metadata src format debug =
   | Ok num -> num
   | Error e ->
       Fmt.pr "%a\n" Http_client.pp_http_error e ;
-      1
+      Stdlib.exit 1
 
 (* CLI *)
 let metadata_format =
