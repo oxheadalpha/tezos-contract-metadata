@@ -180,7 +180,9 @@ let show_metadata src format debug =
        match format with
        | Text Full ->
            Metadata_contents.pp Caml.Format.std_formatter contents ;
-           print_endline ""
+           print_endline "" ;
+           List.iter _warnings ~f:(fun (`Fixed_legacy (key, location)) ->
+               Fmt.kstr print_endline "Warning: %s at %s" key location )
        | Text Short ->
            Metadata_contents.pp_short Caml.Format.std_formatter contents ;
            print_endline ""

@@ -127,27 +127,29 @@ end
 module Content = struct
   let of_json s =
     try
+      let add_if_not_present ~list ~present ~new_value =
+        match List.exists !list ~f:present with
+        | true -> ()
+        | false -> list := new_value :: !list in
       let warnings = ref [] in
       let jsonm =
         let j = Ezjsonm.value_from_string s in
         let rec fix = function
           | (`String _ | `Float _ | `Bool _ | `Null) as v -> v
           | `A l -> `A (List.map l ~f:fix)
-          | `O kvl ->
+          | `O kv_list ->
               let f (k, v) =
-                let fix_warn o k =
-                  ( match
-                      List.exists !warnings ~f:(function
-                          | `Fixed_legacy (a, _) -> String.equal a o )
-                    with
-                  | true -> ()
-                  | false -> warnings := `Fixed_legacy (o, k) :: !warnings ) ;
-                  (k, fix v) in
+                let fix_warn key replacement =
+                  add_if_not_present ~list:warnings
+                    ~present:(function
+                      | `Fixed_legacy (a, _) -> String.equal a key )
+                    ~new_value:(`Fixed_legacy (key, replacement)) ;
+                  (replacement, fix v) in
                 match k with
                 | "michelson-storage-view" -> fix_warn k "michelsonStorageView"
                 | "return-type" -> fix_warn k "returnType"
                 | other -> (other, fix v) in
-              `O (List.map kvl ~f) in
+              `O (List.map kv_list ~f) in
         fix j in
       let contents = Json_encoding.destruct Metadata_contents.encoding jsonm in
       Ok (!warnings, contents)
