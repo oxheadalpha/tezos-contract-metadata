@@ -50,4 +50,8 @@ module Content : sig
     -> ( [`Fixed_legacy of string * string] list * Metadata_contents.t
        , Tezos_error_monad.Error_monad.tztrace )
        Result.t
+  (** Create a contract from json. Return the contract and, if there are any
+      legacy (kebab-case instead of CamelCase) keys, a list of warnings about
+      those keys. The legacy keys are from an earlier version of TZIP-016 and
+      should not be seen very often. *)
 end
