@@ -64,7 +64,7 @@ module Node = struct
     {name; prefix; rpc_cache= Rpc_cache.create (); network; info_url}
 
   let rpc_get (ctxt : 'a Context.t) node path =
-    let uri = Fmt.str "%s/%s" node.prefix path in
+    let uri = node.prefix ^ path in
     let open Lwt in
     let actually_get uri =
       let content = ctxt#http_client.get ?limit_bytes:None uri in
@@ -82,7 +82,7 @@ module Node = struct
     | _, Some s -> return (Ok s)
 
   let rpc_post (ctxt : 'a Context.t) ~node ~body path =
-    let uri = Fmt.str "%s/%s" node.prefix path in
+    let uri = node.prefix ^ path in
     let ctxt =
       ctxt#with_log_context ("Calling HTTP-POST on node " ^ node.name ^ ": ")
     in
