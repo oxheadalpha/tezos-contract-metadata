@@ -166,7 +166,7 @@ let show_metadata src format debug =
           uri
 
       method http_client : Http_client.t =
-        { get= self#http_get; post= self#http_post }
+        {get= self#http_get; post= self#http_post}
 
       method with_log_context new_prefix = {<prefix = new_prefix ^ " " ^ prefix>}
       method log_context = prefix
