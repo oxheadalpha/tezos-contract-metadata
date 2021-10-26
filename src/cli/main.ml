@@ -30,14 +30,13 @@ open Cmdliner
 open Stdio
 
 type text_length = Full | Short
-type output_format = Text of text_length | Json | Raw
+type output_format = Text of text_length | Json
 
 let string_of_output_format fmt =
   match fmt with
   | Text Full -> "text:full"
   | Text Short -> "text:short"
   | Json -> "json"
-  | Raw -> "raw"
 
 let validate_address input_value =
   match B58_hashes.check_b58_kt1_hash input_value with
@@ -174,7 +173,6 @@ let show_metadata src format debug =
        | Text Short ->
            Metadata_contents.pp_short Caml.Format.std_formatter contents ;
            print_endline ""
-       | Raw -> () (* fixme *)
        | Json -> print_endline (Metadata_contents.to_json contents) ) ;
       Lwt.return (Ok 0) ) in
   match result with
@@ -187,7 +185,7 @@ let show_metadata src format debug =
 let metadata_format =
   let doc = "metadata format" in
   let formats =
-    List.map [Text Full; Text Short; Raw; Json] ~f:(fun v ->
+    List.map [Text Full; Text Short; Json] ~f:(fun v ->
         (string_of_output_format v, v) ) in
   let format = Arg.enum formats in
   Arg.(value & opt format (Text Full) & info ["format"] ~docv:"FORMAT" ~doc)
