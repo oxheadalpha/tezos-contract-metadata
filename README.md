@@ -10,7 +10,7 @@ Get dependencies:
 ```
 opam switch create . 4.12.0
 eval $(opam env)
-opam install --deps-only src/lib/tezos-contract-metadata.opam
+opam install --deps-only tezos-contract-metadata.opam
 opam install ocamlformat.0.19.0 merlin # For development.
 ```
 
@@ -30,6 +30,8 @@ dune build @fmt --auto-promote
 ## Test
 
 ```
+opam install --deps-only tezos-contract-metadata-test.opam
+
 dune test
 ```
 
