@@ -62,21 +62,8 @@ let on_uri ctxt uri ~address =
   >>= fun json_code ->
   dbgf ctxt "before of-json" ;
   match Contract_metadata.Content.of_json json_code with
-  | Ok (warnings, contents) ->
-      (*
-                Async_work.ok result
-                  (uri_and_metadata_result ctxt ~full_input ~uri
-                     ?token_metadata_big_map ~metadata:json_code ) ;
-                Lwt.return ()
-                *)
-      return (Ok (warnings, contents))
+  | Ok (warnings, contents) -> return (Ok (warnings, contents))
   | Error trace ->
-      (*
-                raise
-                  (mkexn
-                     (uri_ok_but_metadata_failure ctxt ~uri ~full_input
-                        ~metadata_json:json_code ~error ) )*)
-      (*return None *)
       return
         (Fmt.kstr Http_client.failure "Failed to retrieve contract %s %a"
            (Metadata_uri.to_string_uri uri)
