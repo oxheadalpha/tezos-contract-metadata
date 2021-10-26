@@ -210,7 +210,16 @@ let info =
     ; `P
         "File bug reports at \
          https://github.com/oxheadalpha/tezos-contract-metadata" ] in
-  Term.info "tezos-contract-metadata" ~version:"%‌%VERSION%%" ~doc
-    ~exits:Term.default_exits ~man
+  Term.info "get-metadata" ~version:"%‌%VERSION%%" ~doc ~exits:Term.default_exits
+    ~man
 
-let () = Term.exit @@ Term.eval (show_metadata_t, info)
+let show_metadata_cmd = (show_metadata_t, info)
+let root_doc = "Tezos Contract Metadata "
+let root_man = [`S Manpage.s_description; `P "Tezos Contract Metadata"]
+let root_term = Term.ret (Term.const (`Help (`Pager, None)))
+
+let root_subcommand =
+  let info = Term.info "tezos-contract-metadata" ~doc:root_doc ~man:root_man in
+  (root_term, info)
+
+let () = Term.exit @@ Term.eval_choice root_subcommand [show_metadata_cmd]
