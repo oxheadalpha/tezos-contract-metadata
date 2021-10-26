@@ -88,8 +88,9 @@ let fetch_contract_metadata ctxt src =
         dbgf ctxt "This URI requires a context KT1 address …" ;
       on_uri ctxt uri ~address:None
   | `Error (_address, trace) ->
-      Fmt.kstr Lwt.fail_with "wrong type: %a"
-        Tezos_error_monad.Error_monad.pp_print_error trace
+      Fmt.kstr
+        (fun msg -> Lwt.return (Http_client.failure msg))
+        "%a" Tezos_error_monad.Error_monad.pp_print_error trace
 
 let with_timeout ctxt ~f ~raise =
   let open Lwt.Infix in
