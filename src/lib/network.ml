@@ -23,47 +23,24 @@
 (*                                                                           *)
 (*****************************************************************************)
 
-(** Contract-storage-parsing helper functions for the implementation of TZIP-16. *)
+type t =
+  [`Mainnet | `Edonet | `Florencenet | `Granadanet | `Hangzhounet | `Sandbox]
 
-val get_storage_type_exn :
-     string Tezos_micheline.Micheline.canonical
-  -> ( Tezos_micheline.Micheline.canonical_location
-     , string )
-     Tezos_micheline.Micheline.node
-(** Find the ["storage"] section of a Micheline-encoded Michelson contract.
+let to_string : t -> string = function
+  | `Mainnet -> "Mainnet"
+  | `Edonet -> "Edonet"
+  | `Florencenet -> "Florencenet"
+  | `Granadanet -> "Granadanet"
+  | `Hangzhounet -> "Hangzhounet"
+  | `Sandbox -> "Sandbox"
 
-    @raise [Failure _\] if not found. *)
+let better_call_dev_path : t -> string option = function
+  | `Mainnet -> Some "mainnet"
+  | `Edonet -> Some "edo2net"
+  | `Florencenet -> Some "florencenet"
+  | `Granadanet -> Some "granadanet"
+  | `Hangzhounet -> Some "hangzhounet"
+  | `Sandbox -> None
 
-val get_parameter_type_exn :
-     string Tezos_micheline.Micheline.canonical
-  -> ( Tezos_micheline.Micheline.canonical_location
-     , string )
-     Tezos_micheline.Micheline.node
-(** Find the ["parameter"] section of a Micheline-encoded Michelson contract.
-
-    @raise [Failure _\] if not found. *)
-
-val pp_arbitrary_micheline :
-  Format.formatter -> ('a, string) Tezos_micheline.Micheline.node -> unit
-(** Pretty-print a piece of Micheline regardless of the location type. *)
-
-val find_metadata_big_maps :
-     storage_node:('a, string) Tezos_micheline.Micheline.node
-  -> type_node:('b, string) Tezos_micheline.Micheline.node
-  -> Z.t list
-(** Assuming that [storage_node] is the storage expression of a contract has
-    type [type_node], find the identifier of metadata-big-map according to the
-    TZIP-16 specification. *)
-
-val build_off_chain_view_contract :
-     Metadata_contents.View.Implementation.Michelson_storage.t
-  -> contract_balance:Z.t
-  -> contract_address:string
-  -> contract_storage_type:(int, string) Tezos_micheline.Micheline.node
-  -> contract_parameter_type:(int, string) Tezos_micheline.Micheline.node
-  -> view_parameters:(int, string) Tezos_micheline.Micheline.node
-  -> contract_storage:(int, string) Tezos_micheline.Micheline.node
-  -> [`Contract of (int, string) Tezos_micheline.Micheline.node]
-     * [`Input of (int, string) Tezos_micheline.Micheline.node]
-     * [`Storage of (int, string) Tezos_micheline.Micheline.node]
-(** Build a contract for the [".../run_script"] RPC of the node. *)
+let all : t list =
+  [`Mainnet; `Edonet; `Florencenet; `Granadanet; `Hangzhounet; `Sandbox]

@@ -23,47 +23,59 @@
 (*                                                                           *)
 (*****************************************************************************)
 
-(** Contract-storage-parsing helper functions for the implementation of TZIP-16. *)
+open! Import
+open Tezos_micheline
 
-val get_storage_type_exn :
-     string Tezos_micheline.Micheline.canonical
-  -> ( Tezos_micheline.Micheline.canonical_location
-     , string )
-     Tezos_micheline.Micheline.node
-(** Find the ["storage"] section of a Micheline-encoded Michelson contract.
+module Partial_type : sig
+  module Structure : sig
+    type type_kind =
+      | Any
+      | Nat
+      | Mutez
+      | Bytes
+      | Address
+      | Bool
+      | String
+      | List of type_kind
+      | Map of type_kind * type_kind
 
-    @raise [Failure _\] if not found. *)
+    type leaf = string
 
-val get_parameter_type_exn :
-     string Tezos_micheline.Micheline.canonical
-  -> ( Tezos_micheline.Micheline.canonical_location
-     , string )
-     Tezos_micheline.Micheline.node
-(** Find the ["parameter"] section of a Micheline-encoded Michelson contract.
+    type t =
+      | Leaf of
+          { raw: string Tezos_micheline.Micheline.canonical
+          ; kind: type_kind
+          ; v: leaf
+          ; description: (string * string) option }
+      | Pair of {left: t; right: t}
+  end
 
-    @raise [Failure _\] if not found. *)
+  type t =
+    { original: string Tezos_micheline.Micheline.canonical
+    ; structure: Structure.t }
 
-val pp_arbitrary_micheline :
-  Format.formatter -> ('a, string) Tezos_micheline.Micheline.node -> unit
-(** Pretty-print a piece of Micheline regardless of the location type. *)
+  val of_type :
+       ?annotations:(string * string) list
+    -> Metadata_contents.Michelson_blob.t
+    -> t
 
-val find_metadata_big_maps :
-     storage_node:('a, string) Tezos_micheline.Micheline.node
-  -> type_node:('b, string) Tezos_micheline.Micheline.node
-  -> Z.t list
-(** Assuming that [storage_node] is the storage expression of a contract has
-    type [type_node], find the identifier of metadata-big-map according to the
-    TZIP-16 specification. *)
+  val micheline_string_bytes_map_exn :
+    ('a, string) Micheline.node -> (string * string) list
+end
 
-val build_off_chain_view_contract :
-     Metadata_contents.View.Implementation.Michelson_storage.t
-  -> contract_balance:Z.t
-  -> contract_address:string
-  -> contract_storage_type:(int, string) Tezos_micheline.Micheline.node
-  -> contract_parameter_type:(int, string) Tezos_micheline.Micheline.node
-  -> view_parameters:(int, string) Tezos_micheline.Micheline.node
-  -> contract_storage:(int, string) Tezos_micheline.Micheline.node
-  -> [`Contract of (int, string) Tezos_micheline.Micheline.node]
-     * [`Input of (int, string) Tezos_micheline.Micheline.node]
-     * [`Storage of (int, string) Tezos_micheline.Micheline.node]
-(** Build a contract for the [".../run_script"] RPC of the node. *)
+val micheline_of_json : string -> (int, string) Micheline.node
+val micheline_to_ezjsonm : ('a, string) Micheline.node -> Data_encoding.json
+val micheline_of_ezjsonm : Data_encoding.json -> (int, string) Micheline.node
+val micheline_node_to_string : ('a, string) Micheline.node -> string
+
+val parse_micheline :
+     check_indentation:bool
+  -> check_primitives:bool
+  -> string
+  -> (Micheline_parser.node, Tezos_error_monad.TzCore.error list) result
+
+val parse_micheline_exn :
+     check_indentation:bool
+  -> check_primitives:bool
+  -> string
+  -> Micheline_parser.node

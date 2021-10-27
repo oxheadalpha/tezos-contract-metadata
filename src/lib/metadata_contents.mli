@@ -199,7 +199,3 @@ module Validation : sig
 
   val pp : Format.formatter -> Error.t list * Warning.t list -> unit
 end
-
-module Example : sig
-  val build : int -> t val all : unit -> t list
-end

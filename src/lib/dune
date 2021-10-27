@@ -1,4 +1,7 @@
 (library
  (name tezos_contract_metadata)
  (public_name tezos-contract-metadata)
- (libraries tezos-micheline cohttp fmt base))
+ (inline_tests)
+ (preprocess
+  (pps ppx_inline_test))
+ (libraries tezos-micheline cohttp fmt base digestif base58 stdio))

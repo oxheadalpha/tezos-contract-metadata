@@ -34,6 +34,8 @@ type t =
 
 module Parsing_error = struct
   type error_kind =
+    | Bad_b58 of string * string
+    | Wrong_network of string * string
     | Wrong_scheme of string option
     | Missing_cid_for_ipfs
     | Wrong_tezos_storage_host of string
@@ -47,6 +49,9 @@ module Parsing_error = struct
   let pp ppf {input; error_kind} =
     let open Fmt in
     let err_fmt = function
+      | Bad_b58 (s, failure) -> kstr (const text) "Bad b58 %s %s" s failure
+      | Wrong_network (s, failure) ->
+          kstr (const text) "Bad network %s %s" s failure
       | Wrong_scheme None -> const text "Missing URI scheme"
       | Wrong_scheme (Some s) -> kstr (const text) "Unknown URI scheme: %S" s
       | Missing_cid_for_ipfs -> const text "Missing CID in ipfs:// URI"
@@ -61,7 +66,7 @@ module Parsing_error = struct
             message in
     pf ppf "%a"
       (box
-         ( const text "Error while parsing"
+         ( const text "Error while parsing "
          ++ const (quote string) input
          ++ const string ":" ++ sp ++ err_fmt error_kind ) )
       ()
@@ -132,7 +137,7 @@ type field_validation =
        Tezos_error_monad.Error_monad.TzTrace.trace )
      result
 
-let rec of_uri ?validate_network ?validate_kt1_address uri =
+let rec of_uri ?validate_kt1_address ?validate_network uri =
   let open Uri in
   let open Parsing_error in
   let fail error_kind =
@@ -183,7 +188,7 @@ let rec of_uri ?validate_network ?validate_kt1_address uri =
         | Some hex -> (
           match Hex.to_string (`Hex hex) with
           | value ->
-              of_uri
+              of_uri ?validate_kt1_address ?validate_network
                 ( Uri.path uri |> remove_first_slash |> Uri.pct_decode
                 |> Uri.of_string )
               >>? fun target -> ok (Hash {kind= `Sha256; value; target})
@@ -194,6 +199,14 @@ let rec of_uri ?validate_network ?validate_kt1_address uri =
                 | other -> Printexc.to_string other ) )
         | None -> Fmt.kstr fail_m "Host does not start with 0x" ) )
   | Some s -> fail (Wrong_scheme (Some s))
+
+let%test "of_uri bogus-schema" =
+  Result.is_error (of_uri (Uri.of_string "bogus-schema://nope"))
+
+let%test "of_uri tezos-storage no path" =
+  Result.is_ok
+    (of_uri
+       (Uri.of_string "tezos-storage://KT1QDFEu8JijYbsJqzoXq7mKvfaQQamHD1kX") )
 
 let rec to_string_uri = function
   | Web s -> s

@@ -10,7 +10,7 @@ Get dependencies:
 ```
 opam switch create . 4.12.0
 eval $(opam env)
-opam install --deps-only src/lib/tezos-contract-metadata.opam
+opam install --deps-only tezos-contract-metadata.opam
 opam install ocamlformat.0.19.0 merlin # For development.
 ```
 
@@ -26,6 +26,18 @@ Linting:
 ```
 dune build @fmt --auto-promote
 ```
+
+## Test
+
+```
+opam install --deps-only tezos-contract-metadata-test.opam
+
+dune test
+```
+
+Note that some tests are in src/test to allow a lwt.unix dependency.  Since
+some users of ths lib might want to use js_of_ocaml.lwt, we don't want to depend
+on some any lwt in src/lib.
 
 
 ## History
