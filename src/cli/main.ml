@@ -46,7 +46,7 @@ let validate_address input_value =
         ( input_value
         , [Tezos_error_monad.Error_monad.failure "Invalid KT1 address"] )
   | exception _ -> (
-    match Metadata_uri.of_uri (Uri.of_string input_value) with
+    match Mainlib__Uri_validation.of_uri input_value with
     | Ok uri -> `Uri (input_value, uri)
     | Error e -> `Error (input_value, e) )
 
@@ -77,7 +77,7 @@ let fetch_contract_metadata ctxt src =
         (ctxt#with_log_context "Getting URI")
         ~address ~key:""
       >>= fun metadata_uri ->
-      match Metadata_uri.of_uri (Uri.of_string metadata_uri) with
+      match Mainlib__Uri_validation.of_uri metadata_uri with
       | Ok uri -> on_uri ctxt uri ~address:(Some address)
       | Error errors ->
           Fmt.kstr Lwt.fail_with "Wrong url %s %a" metadata_uri

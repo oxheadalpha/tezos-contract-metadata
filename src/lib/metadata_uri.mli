@@ -65,13 +65,15 @@ type field_validation =
      result
 
 val of_uri :
-     Uri.t
+     ?validate_kt1_address:field_validation
+  -> ?validate_network:field_validation
+  -> Uri.t
   -> ( t
      , Tezos_error_monad.Error_monad.error
        Tezos_error_monad.Error_monad.TzTrace.trace )
      result
-(** Parse a metadata URI, validation of the network and address fields is left
-    optional. *)
+(** Parse a metadata URI. Validation of the network and address fields is left
+    optional, since private chains might have different validation rules. *)
 
 val to_string_uri : t -> string
 (** Make a parsable URI. *)

@@ -1,3 +1,13 @@
+(library
+ (name mainlib)
+ (inline_tests)
+ (modules
+  (:standard \ main))
+ (preprocess
+  (pps ppx_inline_test))
+ (libraries tezos-contract-metadata))
+
 (executable
  (name main)
- (libraries tezos-contract-metadata cmdliner cohttp-lwt-unix lwt))
+ (modules main)
+ (libraries tezos-contract-metadata cmdliner cohttp-lwt-unix lwt mainlib))

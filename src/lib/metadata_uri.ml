@@ -137,7 +137,7 @@ type field_validation =
        Tezos_error_monad.Error_monad.TzTrace.trace )
      result
 
-let rec of_uri uri =
+let rec of_uri ?validate_kt1_address ?validate_network uri =
   let open Uri in
   let open Parsing_error in
   let fail error_kind =
@@ -164,24 +164,13 @@ let rec of_uri uri =
         | [one; two] -> ok (Some two, Some one)
         | _ -> fail (Wrong_tezos_storage_host s) ) )
       >>? fun (network, address) ->
-      let validate_option ~f v =
-        match v with Some value -> f value | None -> ok () in
-      validate_option network ~f:(function
-        | "mainnet" | "carthagenet" | "delphinet" | "dalphanet" | "zeronet" ->
-            Ok ()
-        | network -> (
-          try Ok (ignore (B58_hashes.check_b58_chain_id_hash network)) with
-          | Failure f -> fail (Wrong_network (network, f))
-          | e ->
-              Fmt.kstr
-                (fun x -> fail (Wrong_network (network, x)))
-                "%a" Base.Exn.pp e ) )
+      let validate_option f v =
+        match (f, v) with
+        | Some (validate : field_validation), Some value -> validate value
+        | _, _ -> ok () in
+      validate_option validate_network network
       >>? fun () ->
-      validate_option address ~f:(fun address ->
-          try Ok (ignore (B58_hashes.check_b58_kt1_hash address)) with
-          | Failure f -> fail (Bad_b58 (address, f))
-          | e ->
-              Fmt.kstr (fun x -> fail (Bad_b58 (address, x))) "%a" Base.Exn.pp e )
+      validate_option validate_kt1_address address
       >>? fun () ->
       match remove_first_slash (path uri) with
       | k when String.contains k '/' ->
@@ -199,7 +188,7 @@ let rec of_uri uri =
         | Some hex -> (
           match Hex.to_string (`Hex hex) with
           | value ->
-              of_uri
+              of_uri ?validate_kt1_address ?validate_network
                 ( Uri.path uri |> remove_first_slash |> Uri.pct_decode
                 |> Uri.of_string )
               >>? fun target -> ok (Hash {kind= `Sha256; value; target})
@@ -213,26 +202,6 @@ let rec of_uri uri =
 
 let%test "of_uri bogus-schema" =
   Result.is_error (of_uri (Uri.of_string "bogus-schema://nope"))
-
-let%test "validate_address tezos-storage bogus address" =
-  Result.is_error (of_uri (Uri.of_string "tezos-storage://nope"))
-
-let%test "validate_address tezos-storage bogus network" =
-  Result.is_error
-    (of_uri
-       (Uri.of_string
-          "tezos-storage://KT1QDFEu8JijYbsJqzoXq7mKvfaQQamHD1kX.harappanet" ) )
-
-let%test "validate_address tezos-storage with path and network" =
-  Result.is_ok
-    (of_uri
-       (Uri.of_string
-          "tezos-storage://KT1QDFEu8JijYbsJqzoXq7mKvfaQQamHD1kX.mainnet/foo" ) )
-
-let%test "validate_address tezos-storage with path" =
-  Result.is_ok
-    (of_uri
-       (Uri.of_string "tezos-storage://KT1QDFEu8JijYbsJqzoXq7mKvfaQQamHD1kX/foo") )
 
 let%test "of_uri tezos-storage no path" =
   Result.is_ok
