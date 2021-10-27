@@ -7,7 +7,9 @@ let of_uri uri_str =
       (Contract_metadata_uri_parsing {input= uri_str; error_kind}) in
   let validate_network network =
     match network with
-    | "mainnet" | "carthagenet" | "delphinet" | "dalphanet" | "zeronet" -> Ok ()
+    | "mainnet" | "edonet" | "florencenet" | "granadanet" | "hangzhounet"
+     |"mondaynet" ->
+        Ok ()
     | network -> (
       try Ok (ignore (B58_hashes.check_b58_chain_id_hash network)) with
       | Failure f -> fail (Wrong_network (network, f))

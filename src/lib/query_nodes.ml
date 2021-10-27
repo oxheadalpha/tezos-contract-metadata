@@ -224,6 +224,8 @@ let default_nodes : Node.t list =
         ~info_url:smartpy
     ; Node.create "Granadanet-SmartPy" "https://granadanet.smartpy.io"
         ~network:`Granadanet ~info_url:smartpy
+    ; Node.create "Hangzhounet-SmartPy" "https://hangzhounet.smartpy.io"
+        ~network:`Hangzhounet ~info_url:smartpy
     ; Node.create "Florencenet-SmartPy" ~network:`Florencenet
         "https://florencenet.smartpy.io" ~info_url:smartpy
     ; Node.create "Mainnet-GigaNode" "https://mainnet-tezos.giganode.io"
@@ -312,7 +314,7 @@ let call_off_chain_view ctxt ~address ~view ~parameter =
     | Some p when String.is_prefix p ~prefix:"PtEdo2Zk" -> (`Edo, p)
     | Some p when String.is_prefix p ~prefix:"PsFLorena" -> (`Florence, p)
     | Some p when String.is_prefix p ~prefix:"PtGRANAD" -> (`Granada, p)
-    | Some p when String.is_prefix p ~prefix:"ProtoALpha" -> (`Granada, p)
+    | Some p when String.is_prefix p ~prefix:"PtHangzH" -> (`Hangzhou, p)
     | Some p ->
         logf "Can't recognize protocol: `%s` assuming Edo-like." p ;
         (`Granada, p) in
@@ -386,7 +388,7 @@ let call_off_chain_view ctxt ~address ~view ~parameter =
       ; ("chain_id", string chain_id) ] in
     let fields =
       match protocol_kind with
-      | `Edo | `Florence | `Granada ->
+      | `Edo | `Florence | `Granada | `Hangzhou ->
           normal_fields
           @ [ ("balance", string "0")
             ; ("unparsing_mode", string "Optimized_legacy") ]
