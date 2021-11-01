@@ -1,5 +1,4 @@
 (lang dune 2.9)
-(name tezos-contract-metadata)
 
 (source (github oxheadalpha/tezos-contract-metadata))
 (license MIT)
@@ -7,6 +6,19 @@
 (maintainers "seb@mondet.org")
 
 (generate_opam_files true)
+
+(package
+ (name tezos-base58-digest)
+ (synopsis "Tezos Base58 hash-encodings based on Digestif")
+ (description "Tezos Base58 hash-encodings, including common prefixes, \
+               based on the Digestif library.")
+ (version 0.2)
+ (depends
+  (digestif (>= "0.9.0"))
+  (dune (>= "2.9"))
+  (ppx_inline_test (>= "0.14.0"))
+ )
+)
 
 (package
  (name tezos-contract-metadata)
