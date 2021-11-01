@@ -1,9 +1,9 @@
 module String = struct
   let sha256 s = Digestif.SHA256.(to_raw_string (digest_string s))
   let sha512 s = Digestif.SHA512.(to_raw_string (digest_string s))
-  let blake2b32 = Digestif.blake2b 32
 
-  let blake2b x =
+  let blake2b ~size x =
+    let blake2b32 = Digestif.blake2b size in
     Digestif.digest_string blake2b32 x |> Digestif.to_raw_string blake2b32
 
   let%expect_test _ =
@@ -27,12 +27,12 @@ module String = struct
       {|
       "hello" -> 9B71D224BD62F3785D96D46AD3EA3D73319BFBC289CAADAE2DFF72519673CA72323C3D99BA5C11D7C7ACC6E14B8C5DAC4663475C2E5C3ADEF46F73BCDEC043
       |}] ;
-    phash blake2b "hello" ;
+    phash (blake2b ~size:32) "hello" ;
     [%expect
       {|
       "hello" -> 324DCF27DD4A3A932C441F365A25E86B173DEFA4B8E58948253471B81B72CF
       |}] ;
-    let all = [sha256; sha512; blake2b] in
+    let all = [sha256; sha512; blake2b ~size:32] in
     List.iter (fun f -> phash f "") all ;
     [%expect
       {|
