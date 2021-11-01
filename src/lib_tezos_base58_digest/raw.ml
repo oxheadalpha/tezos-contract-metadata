@@ -1,8 +1,10 @@
+type base58 = string
+
 module String = struct
-  let to_base58 s =
+  let to_base58 s : base58 =
     Base58.of_bytes (module Crypto_hash.String) s |> Base58.to_string
 
-  let of_base58 s =
+  let of_base58 (s : base58) =
     Base58.of_string_exn (module Crypto_hash.String) s
     |> Base58.to_bytes_exn (module Crypto_hash.String)
 
