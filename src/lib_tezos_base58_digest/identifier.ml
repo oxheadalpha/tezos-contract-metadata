@@ -1,3 +1,5 @@
+module List = ListLabels
+
 module Base58_hash (Parameters : sig
   val prefix : string val size : int
 end) =
@@ -45,5 +47,51 @@ module Chain_id = struct
         (of_base58_block_hash block)
         chain_id ;
       of_base58_block_hash block = chain_id in
-    List.for_all test_flextesa flextesas_ones
+    List.for_all ~f:test_flextesa flextesas_ones
+end
+
+module Operation_hash = struct
+  include Base58_hash (struct
+    let prefix = Prefix.operation_hash let size = 32
+  end)
+end
+
+module Kt1_address = struct
+  include Base58_hash (struct
+    let prefix = Prefix.contract_hash let size = 20
+  end)
+
+  let of_base58_operation_hash ?(index = 0l) op_hash =
+    let operation_hash_bytes = Operation_hash.decode op_hash in
+    let to_hash =
+      let buf = Buffer.create (String.length operation_hash_bytes + 4) in
+      Buffer.add_string buf operation_hash_bytes ;
+      Buffer.add_int32_be buf index ;
+      Buffer.contents buf in
+    encode (Crypto_hash.String.blake2b ~size to_hash)
+
+  let%test _ =
+    let expected =
+      (* See https://gist.github.com/smondet/006fa072e8d7afb32ba1adec106b09d8 *)
+      [ ( "ooLC2QykF5NGiugdTyXJwsn2MEPMdRYJ4TeUoPMx8s38NzFximC"
+        , 0x0l
+        , "KT1B94zMXzBr5nLuGXxx1GF7r6uSK6Sfz7pn" )
+      ; ( "opCCqC2xtPgXHdoYynQF4WajE3BvAJwr2uJN4jS54ziweKCiUgw"
+        , 0x0l
+        , "KT1BUd1YiPewuhYtbRpJqjrQj2yW55u1vEQB" )
+      ; ( "opCCqC2xtPgXHdoYynQF4WajE3BvAJwr2uJN4jS54ziweKCiUgw"
+        , 0x1l
+        , "KT1VRpdD6jhMDdtR2QSLbRYDyFMkZpudVMAP" )
+      ; ( "opCCqC2xtPgXHdoYynQF4WajE3BvAJwr2uJN4jS54ziweKCiUgw"
+        , 0x3ffl
+        , "KT1B49o4pF1wfv562fHcZ1wCzGFp8JdFkHeN" )
+      ; ( "opCCqC2xtPgXHdoYynQF4WajE3BvAJwr2uJN4jS54ziweKCiUgw"
+        , 0xdeadbeefl
+        , "KT1EiKdPhuxRXrk9WtGEPVNp8aLYXFzJ1FGZ" ) ] in
+    List.for_all expected ~f:(fun (op, index, expected_kt1) ->
+        let computed = of_base58_operation_hash op ~index in
+        Printf.eprintf
+          "Trying of_base58_operation_hash %s ~index:%ld = %S Vs %s\n" op index
+          computed expected_kt1 ;
+        computed = expected_kt1 )
 end
