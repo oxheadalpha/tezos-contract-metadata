@@ -22,7 +22,7 @@ depends: [
   "odoc" {with-doc}
 ]
 build: [
-  ["dune" "subst" "--root" "."] {dev}
+#  ["dune" "subst" "--root" "."] {dev}
   [
     "dune"
     "build"
