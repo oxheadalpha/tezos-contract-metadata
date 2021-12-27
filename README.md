@@ -39,6 +39,16 @@ Note that some tests are in src/test to allow a lwt.unix dependency.  Since
 some users of ths lib might want to use js_of_ocaml.lwt, we don't want to depend
 on some any lwt in src/lib.
 
+## Vendors
+
+`vendor/flextesa` was added at commit
+`b4fa726a2fdd1ee62da07e3194bf1f08f85d9872`:
+
+```
+git subtree add -P vendor/flextesa \
+    https://gitlab.com/tezos/flextesa.git master --squash
+```
+
 
 ## History
 
