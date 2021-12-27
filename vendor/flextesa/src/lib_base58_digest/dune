@@ -1,0 +1,7 @@
+(library
+ (name tezai_base58_digest)
+ (public_name tezai-base58-digest)
+ (inline_tests)
+ (preprocess
+  (pps ppx_inline_test ppx_expect))
+ (libraries digestif zarith))

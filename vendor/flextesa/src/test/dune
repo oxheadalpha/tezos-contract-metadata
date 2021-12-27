@@ -1,0 +1,8 @@
+(executables
+ (names main)
+ (libraries flextesa))
+
+(rule
+ (alias runtest)
+ (action
+  (run %{exe:main.exe})))
