@@ -1,0 +1,7 @@
+(executables
+ (names main)
+ (libraries flextesa tezai-base58-digest))
+
+;;(alias
+;; (name runtest)
+;; (action (run %{exe:main.exe})))

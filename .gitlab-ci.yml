@@ -1,0 +1,115 @@
+stages:
+  - setup-docker-image
+  - build
+  - test
+  - doc
+  - deploy
+
+variables:
+  dind_image: "docker:20.10.7"
+  dind_service: "docker:20.10.7-dind"
+  SHOW_INFO: >
+    echo "=========== INFO: ============" &&
+    opam config exec -- ocamlc -version &&
+    git status &&
+    git log --graph  --decorate --all --oneline -n 20
+
+docker:images:
+  image: "$dind_image"
+  services:
+    - "$dind_service"
+  stage: setup-docker-image
+  variables:
+    DOCKER_DRIVER: overlay2
+  # https://forum.gitlab.com/t/pipeline-stuck-with-fetch-https-dl-cdn-alpinelinux-org-alpine-v3-14-main-x86-64-apkindex-tar-gz/59074/4
+    FF_NETWORK_PER_BUILD: "true"
+  before_script:
+    - apk add git bash
+    - git --version
+    - bash --version
+    - docker --version
+  script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    - docker pull ocaml/opam:ubuntu-21.04-ocaml-4.12
+    - docker build . --target build_step -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}-build"
+    - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}-build"
+    - docker build . --target run_image -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}-run"
+    - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}-run"
+    - docker tag "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}-run" "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}-run"
+    - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}-run"
+
+#docker:images:
+#  image: jdrouet/docker-with-buildx:latest
+#  services:
+#    - "$dind_service"
+#  stage: setup-docker-image
+#  variables:
+#    DOCKER_HOST: tcp://docker:2375/
+#    DOCKER_DRIVER: overlay2
+#  # https://forum.gitlab.com/t/pipeline-stuck-with-fetch-https-dl-cdn-alpinelinux-org-alpine-v3-14-main-x86-64-apkindex-tar-gz/59074/4
+#    FF_NETWORK_PER_BUILD: "true"
+#  before_script:
+#    - apk add git bash
+#    - git --version
+#    - bash --version
+#    - docker --version
+#  script:
+#    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+#    - docker buildx create --use
+#    - date
+#    - docker buildx build --platform linux/arm64/v8  . --target build_step -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}-build"
+##    - docker buildx build --platform linux/arm64/v8,linux/amd64  . --target build_step -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}-build"
+##    - date
+##    - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}-build"
+##    - date
+##    - docker buildx build --platform linux/arm64/v8,linux/amd64  . --target run_image -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}-build"
+##    - date
+##    - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}-run"
+#    - date
+
+lint:
+  image: "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}-build"
+  stage: build
+  script:
+     - sh -c "$SHOW_INFO"
+     - opam install ocamlformat.0.19.0
+     - opam exec -- ocamlformat --version
+     - opam exec -- make fmt
+     - git diff --exit-code
+
+unit-tests:
+  image: "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}-build"
+  stage: build
+  script:
+     - sh -c "$SHOW_INFO"
+     - opam install --deps-only --with-test ./tezai-base58-digest.opam ./tezai-tz1-crypto.opam
+     - dune runtest
+
+docker:test:full:
+  image: "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}-run"
+  stage: build
+  script:
+    - apk add bash
+    - ./src/scripts/full-sandbox-tests.sh
+
+
+makewebsite:
+  image: "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}-build"
+  stage: build
+  artifacts:
+     paths:
+     - testweb
+  script:
+     - bash -c "$SHOW_INFO"
+     - opam exec -- sh src/scripts/build-doc.sh testweb/
+
+pages:
+  image: docker:latest
+  stage: deploy
+  script:
+     - cp -r testweb public
+  artifacts:
+     paths:
+     - public
+  only:
+  - master
