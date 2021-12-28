@@ -26,6 +26,7 @@ module Chain_id : sig
 end
 
 module Operation_hash : Base58_hash_identifier
+module Script_expr_hash : Base58_hash_identifier
 
 module Kt1_address : sig
   include Base58_hash_identifier
