@@ -248,6 +248,34 @@ let encode_michelson_int i =
     Tezos_micheline.Micheline.(Int (0, Z.of_int i) |> strip_locations)
   |> Bytes.to_string
 
+let b58_script_id_hash_of_michelson_string s =
+  Tezai_base58_digest.Identifier.Script_expr_hash.(
+    hash_string ("\x05" ^ encode_michelson_string s) |> encode)
+
+let b58_script_id_hash_of_michelson_int s =
+  Tezai_base58_digest.Identifier.Script_expr_hash.(
+    hash_string ("\x05" ^ encode_michelson_int s) |> encode)
+
+let%expect_test _ =
+  let p f v = Printf.printf "%S\n%!" (f v) in
+  let ps = p b58_script_id_hash_of_michelson_string in
+  let pi = p b58_script_id_hash_of_michelson_int in
+  ps "" (* Check against `tezos-client  hash data '""' of type string` *) ;
+  [%expect {| "expru5X1yxJG6ezR2uHMotwMLNmSzQyh5t1vUnhjx4cS6Pv9qE1Sdo" |}] ;
+  ps "hello" ;
+  [%expect {| "exprtsjEVVZk3Gm82U9wEs8kvwRiQwUT7zipJwvCeFMNsApe2tQ15s" |}] ;
+  pi 0 ;
+  [%expect {| "exprtZBwZUeYYYfUs9B9Rg2ywHezVHnCCnmF9WsDQVrs582dSK63dC" |}] ;
+  pi (-1) ;
+  [%expect {| "expru57wdzZCHCeGnKwUzxCJjG1HjveGXp1CCusScXEMq9kbidSvDG" |}] ;
+  pi (-10_000) ;
+  [%expect {| "expruboESrygwvfT6TdLDL6JWZ1RSyGxKV3szmVs6bgMWXbGnrToHi" |}] ;
+  pi 10_000 ;
+  [%expect {| "exprvLmTaiHBSiSgMnh1prUQA6wK2pGcmxHzTAkzX6Ym8b2Kjj1QHL" |}] ;
+  pi 1 ;
+  [%expect {| "expru2dKqDfZG8hu4wNGkiyunvq2hdSKuVYtcKta7BWP6Q18oNxKjS" |}] ;
+  ()
+
 let example () =
   let bytes = "0707002a002a" in
   let to_display =

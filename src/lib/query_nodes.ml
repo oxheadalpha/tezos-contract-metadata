@@ -160,7 +160,8 @@ module Node = struct
   let bytes_value_of_big_map_at_string ctxt node ~big_map_id ~key =
     let open Lwt in
     let ( >>= ) = Lwt_result.bind in
-    let hash_string = B58_hashes.b58_script_id_hash_of_michelson_string key in
+    let hash_string =
+      Michelson_bytes.b58_script_id_hash_of_michelson_string key in
     Decorate_error.(
       reraise
         Message.(
@@ -182,7 +183,7 @@ module Node = struct
     return (Ok content)
 
   let micheline_value_of_big_map_at_nat ctxt node ~big_map_id ~key =
-    let hash_string = B58_hashes.b58_script_id_hash_of_michelson_int key in
+    let hash_string = Michelson_bytes.b58_script_id_hash_of_michelson_int key in
     Lwt_result.bind_result
       Decorate_error.(
         reraise

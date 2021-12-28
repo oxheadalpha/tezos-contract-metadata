@@ -3,5 +3,13 @@
  (public_name tezos-contract-metadata)
  (inline_tests)
  (preprocess
-  (pps ppx_inline_test))
- (libraries tezos-micheline cohttp fmt base digestif base58 stdio))
+  (pps ppx_inline_test ppx_expect))
+ (libraries
+  tezos-micheline
+  cohttp
+  fmt
+  base
+  digestif
+  base58
+  stdio
+  tezai-base58-digest))
