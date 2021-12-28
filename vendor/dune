@@ -1,1 +1,4 @@
-(dirs flextesa/src/lib_base58_digest/ flextesa/src/lib_tz1_crypto)
+;;(dirs flextesa/src/lib_base58_digest/ flextesa/src/lib_tz1_crypto)
+;;(vendored_dirs flextesa)
+
+(data_only_dirs flextesa/src/lib/)

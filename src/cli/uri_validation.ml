@@ -11,12 +11,13 @@ let of_uri uri_str =
      |"mondaynet" ->
         Ok ()
     | network -> (
-      try Ok (ignore (B58_hashes.check_b58_chain_id_hash network)) with
-      | Failure f -> fail (Wrong_network (network, f))
-      | e ->
-          Fmt.kstr
-            (fun x -> fail (Wrong_network (network, x)))
-            "%a" Base.Exn.pp e ) in
+        let _ = Tezai_base58_digest.Identifier.Chain_id.decode network in
+        try Ok (ignore (B58_hashes.check_b58_chain_id_hash network)) with
+        | Failure f -> fail (Wrong_network (network, f))
+        | e ->
+            Fmt.kstr
+              (fun x -> fail (Wrong_network (network, x)))
+              "%a" Base.Exn.pp e ) in
   let validate_kt1_address address =
     try Ok (ignore (B58_hashes.check_b58_kt1_hash address)) with
     | Failure f -> fail (Bad_b58 (address, f))

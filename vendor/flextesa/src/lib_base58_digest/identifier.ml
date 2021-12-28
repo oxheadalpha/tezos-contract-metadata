@@ -23,6 +23,17 @@ struct
   let hash_string = Crypto_hash.String.blake2b ~size
 
   include Base58_prefixed (Parameters)
+
+  let check b58_hash =
+    let optry o k =
+      Fmt.kstr
+        (fun message ->
+          match o () with
+          | Some s -> s
+          | None -> Fmt.failwith "%s" message
+          | exception e -> Fmt.failwith "%s (Exception: %a)" message Exn.pp e )
+        k in dleij
+    ignore optry
 end
 
 module Block_hash = struct
