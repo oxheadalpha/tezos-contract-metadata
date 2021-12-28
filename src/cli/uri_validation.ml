@@ -18,7 +18,7 @@ let of_uri uri_str =
             (fun x -> fail (Wrong_network (network, x)))
             "%a" Base.Exn.pp e ) in
   let validate_kt1_address address =
-    try Ok (Tezai_base58_digest.Identifier.Chain_id.check address) with
+    try Ok (Tezai_base58_digest.Identifier.Kt1_address.check address) with
     | Failure f -> fail (Bad_b58 (address, f))
     | e -> Fmt.kstr (fun x -> fail (Bad_b58 (address, x))) "%a" Base.Exn.pp e
   in
