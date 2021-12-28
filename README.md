@@ -39,6 +39,21 @@ Note that some tests are in src/test to allow a lwt.unix dependency.  Since
 some users of ths lib might want to use js_of_ocaml.lwt, we don't want to depend
 on some any lwt in src/lib.
 
+## Vendor Libraries
+
+Tezai-base58-digest, vendored because unreleased (name and canonical location
+are temporary):
+
+```default
+ $ flextesa=/path/to/flextesa/
+ # mkdir -p  vendor/tezai-base58-digest
+ $ rsync -va $flextesa/src/lib_base58_digest/ vendor/tezai-base58-digest
+ $ git -C $flextesa describe --always
+7503cc81
+```
+
+
+
 
 ## History
 

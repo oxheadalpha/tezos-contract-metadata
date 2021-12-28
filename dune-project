@@ -57,3 +57,6 @@
   (tls(>= "0.15.0"))
  )
 )
+
+;; Vendors
+(package (name tezai-base58-digest))
