@@ -1,4 +1,19 @@
 module List = ListLabels
+module String = StringLabels
+
+module type Base58_identifier = sig
+  val prefix : string
+  val encode : string -> Raw.base58
+  val decode : Raw.base58 -> string
+end
+
+module type Base58_hash_identifier = sig
+  include Base58_identifier
+
+  val size : int
+  val hash_string : string -> string
+  val check : string -> unit
+end
 
 module Base58_prefixed (Parameters : sig
   val prefix : string
@@ -11,7 +26,7 @@ struct
   let decode s =
     let whole = Raw.String.of_base58 s in
     let prelen = String.length prefix in
-    String.sub whole prelen (String.length whole - prelen)
+    String.sub whole ~pos:prelen ~len:(String.length whole - prelen)
 end
 
 module Base58_hash (Parameters : sig
@@ -20,9 +35,46 @@ end) =
 struct
   include Parameters
 
-  let hash_string = Crypto_hash.String.blake2b ~size
+  module Sized_blacke2b = Digestif.Make_BLAKE2B (struct
+    let digest_size = size
+  end)
+
+  let hash_string x = Sized_blacke2b.(to_raw_string (digest_string x))
 
   include Base58_prefixed (Parameters)
+
+  let check hashed_string =
+    let optry ~f k =
+      Format.kasprintf
+        (fun message ->
+          match f () with
+          | Some _ -> ()
+          | None -> Format.kasprintf failwith "%s" message
+          | exception Failure msg ->
+              Format.kasprintf failwith "%s (Failure: %s)" message msg
+          | exception e ->
+              Format.kasprintf failwith "%s (Exception: %s)" message
+                (Printexc.to_string e) )
+        k in
+    let exntry ~f k = optry ~f:(fun () -> Some (f ())) k in
+    let bitcoin_alphabet = Vbmithr_base58.Alphabet.(all_characters default) in
+    String.iteri hashed_string ~f:(fun idx c ->
+        optry
+          ~f:(fun () -> String.index_opt bitcoin_alphabet c)
+          "Character %c (0x%x) at index %d is not part the Base58 alphabet." c
+          (Char.code c) idx ) ;
+    exntry
+      ~f:(fun () ->
+        let whole = Raw.String.of_base58 hashed_string in
+        let prelen = String.length prefix in
+        let pref = String.sub whole ~pos:0 ~len:prelen in
+        if String.equal pref prefix then ()
+        else Format.kasprintf failwith "Wrong prefix: %S" pref ;
+        let decoded = decode hashed_string in
+        let _ = Digestif.of_raw_string (Digestif.blake2b size) decoded in
+        () )
+      "Cannot decode base58 from %S" hashed_string ;
+    ()
 end
 
 module Block_hash = struct
@@ -34,7 +86,8 @@ module Chain_id = struct
 
   let of_base58_block_hash hash =
     let of_block_hash block_hash =
-      String.sub (Crypto_hash.String.blake2b ~size:32 block_hash) 0 4 in
+      String.sub (Crypto_hash.String.blake2b ~size:32 block_hash) ~pos:0 ~len:4
+    in
     encode (of_block_hash (Block_hash.decode hash))
 
   let%test _ =
@@ -58,6 +111,27 @@ module Chain_id = struct
         chain_id ;
       of_base58_block_hash block = chain_id in
     List.for_all ~f:test_flextesa flextesas_ones
+
+  let%expect_test _ =
+    let open Printf in
+    let print_check s =
+      try check s ; printf "OK\n%!" with
+      | Failure msg -> printf "KO: %s\n%!" msg
+      | e -> printf "KO: %s\n%!" (Printexc.to_string e) in
+    print_check "PsIthaca" ;
+    [%expect
+      {| KO: Character I (0x49) at index 2 is not part the Base58 alphabet. |}] ;
+    print_check "Psithaca" ;
+    [%expect
+      {|
+        KO: Cannot decode base58 from "Psithaca" (Exception: (Invalid_argument Base58.of_string_exn)) |}] ;
+    print_check "PsiThaCaT47Zboaw71QWScM8sXeMM7bbQFncK9FLqYc6EKdpjVP" ;
+    [%expect
+      {|
+        KO: Cannot decode base58 from "PsiThaCaT47Zboaw71QWScM8sXeMM7bbQFncK9FLqYc6EKdpjVP" (Failure: Wrong prefix: "\002\170\131") |}] ;
+    print_check "NetXgbFy27eBoxH" ;
+    [%expect {| OK |}] ;
+    ()
 end
 
 module Operation_hash = struct
