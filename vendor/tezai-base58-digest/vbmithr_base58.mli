@@ -20,6 +20,9 @@ module Alphabet : sig
 
   val default : t
   (** [default] is [bitcoin]. *)
+
+  val all_characters : t -> string
+  (** Return a string containing all the characters of that alphabet. *)
 end
 
 type t = [`Base58 of string]

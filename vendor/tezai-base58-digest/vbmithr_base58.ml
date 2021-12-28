@@ -38,6 +38,7 @@ module Alphabet = struct
   let ripple = make "rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz"
   let flickr = make "123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
   let default = bitcoin
+  let all_characters t = t.encode
 end
 
 let count_trailing_char s c =
