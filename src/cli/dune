@@ -5,7 +5,7 @@
   (:standard \ main))
  (preprocess
   (pps ppx_inline_test))
- (libraries tezos-contract-metadata))
+ (libraries tezos-contract-metadata tezai-base58-digest))
 
 (executable
  (name main)

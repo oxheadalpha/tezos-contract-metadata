@@ -39,8 +39,8 @@ let string_of_output_format fmt =
   | Json -> "json"
 
 let validate_address input_value =
-  match B58_hashes.check_b58_kt1_hash input_value with
-  | _ -> `KT1 input_value
+  match Tezai_base58_digest.Identifier.Chain_id.check input_value with
+  | () -> `KT1 input_value
   | exception _ when String.is_prefix input_value ~prefix:"KT" ->
       `Error
         ( input_value
